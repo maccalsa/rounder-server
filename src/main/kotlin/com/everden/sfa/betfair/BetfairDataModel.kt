@@ -1,9 +1,8 @@
 package com.everden.sfa.betfair
 
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDateTime
 
-
+// Query request to Betfair
 data class ExchangeApiRequest(val filter: MarketFilter) {
         var granularity = TimeGranularity.DAYS
 
@@ -12,6 +11,7 @@ data class ExchangeApiRequest(val filter: MarketFilter) {
         }
 }
 
+// The filter for thr query request to befair
 @Schema(name="Filter", description="Main Search Request")
 data class MarketFilter (
         var eventTypeIds : List<Int> = listOf(),
@@ -19,15 +19,30 @@ data class MarketFilter (
         var competitionIds : List<Int> = listOf()
 )
 
+// Enum
 enum class TimeGranularity {DAYS, HOURS, MINUTES}
 
+
+// Return types from betfair
 data class EventType (val eventType : KeyValue, val marketCount : Int)
 data class Competition (val competition : KeyValue, val marketCount : Int)
 data class TimeRange (val timeRange : Range<String>, val marketCount : Int)
+data class Event (val event : EventDetail, val marketCount : Int)
+data class EventDetail(
+                 override val id : Int, override val name : String,
+                 val countryCode : String,
+                 val timezone : String,
+                 val openDate : String) : KeyValue(id, name)
 
 data class MarketType (val marketType : String, val marketCount : Int)
-data class KeyValue(val id : Int, val name : String)
-data class Range<T>(val from : T, val to : T)
+
+
+// Utility classes
+open class KeyValue(open val id : Int, open val name : String)
+open class Range<T>(val from : T, val to : T)
+
+
+
 
 @Schema(name="ApiRequest", description="Main Search Request")
 data class ApiRequest (

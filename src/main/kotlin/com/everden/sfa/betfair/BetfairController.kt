@@ -45,47 +45,35 @@ class BetfairController {
         }
     }
 
-    @Post(uri="/listEventTypes",
-            consumes = [MediaType.APPLICATION_JSON],
-            produces = [MediaType.APPLICATION_JSON]
-    )
+    @Post(uri="/listEventTypes", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
     fun listEventTypes(@Body req : ApiRequest) : HttpResponse<List<EventType>> {
-
-        return try {
-            val apiRequest = ExchangeApiRequest(req.filter, req.granularity)
-            val results = betfairClient.listEventTypes(SESSION_KEY, req.appKey, apiRequest)
-            return HttpResponse.ok(results)
-        } catch (e: IllegalStateException) {
-            LOG.error("listEventTypes error ", e)
-            HttpResponse.badRequest()
-        }
+        return makeApiCall(req) {a, b, c -> c.listEventTypes(SESSION_KEY, a, b)}
     }
 
-    @Post(uri="/listCompetitions",
-            consumes = [MediaType.APPLICATION_JSON],
-            produces = [MediaType.APPLICATION_JSON]
-    )
+    @Post(uri="/listCompetitions", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
     fun listCompetitions(@Body req : ApiRequest) : HttpResponse<List<Competition>> {
-
-        return try {
-            val apiRequest = ExchangeApiRequest(req.filter, req.granularity)
-            val results = betfairClient.listCompetitions(SESSION_KEY, req.appKey, apiRequest)
-            return HttpResponse.ok(results)
-        } catch (e: Exception) {
-            LOG.error("listCompetitions error ", e)
-            HttpResponse.badRequest()
-        }
+        return makeApiCall(req) {a, b, c -> c.listCompetitions(SESSION_KEY, a, b)}
     }
 
-    @Post(uri="/listTimeRanges",
-            consumes = [MediaType.APPLICATION_JSON],
-            produces = [MediaType.APPLICATION_JSON]
-    )
+    @Post(uri="/listTimeRanges", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
     fun listTimeRanges(@Body req : ApiRequest) : HttpResponse<List<TimeRange>> {
+        return makeApiCall(req) {a, b, c -> c.listTimeRanges(SESSION_KEY, a, b)}
+    }
 
+    @Post(uri="/listEvents", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
+    fun listEvents(@Body req : ApiRequest) : HttpResponse<List<Event>> {
+        return makeApiCall(req) {a, b, c -> c.listEvents(SESSION_KEY, a, b)}
+    }
+
+    @Post(uri="/marketType", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
+    fun marketType(@Body req : ApiRequest) : HttpResponse<List<MarketType>> {
+        return makeApiCall(req) {a, b, c -> c.marketType(SESSION_KEY, a, b)}
+    }
+
+    private fun <T: Any> makeApiCall(@Body req : ApiRequest, getData: (String, ExchangeApiRequest, BetfairClient) -> List<T>) : HttpResponse<List<T>> {
         return try {
             val apiRequest = ExchangeApiRequest(req.filter, req.granularity)
-            val results = betfairClient.listTimeRanges(SESSION_KEY, req.appKey, apiRequest)
+            val results = getData.invoke(req.appKey, apiRequest, betfairClient)
             return HttpResponse.ok(results)
         } catch (e: Exception) {
             LOG.error("listTimeRanges error ", e)
@@ -118,5 +106,19 @@ interface BetfairClient {
     fun listTimeRanges(@Header("X-Authentication") authentication : String,
                          @Header("X-Application") applicationKey: String,
                          @Body req : ExchangeApiRequest) : List<TimeRange>
+
+    @Post("listEvents/",
+            produces = [MediaType.APPLICATION_JSON],
+            consumes = [MediaType.APPLICATION_JSON])
+    fun listEvents(@Header("X-Authentication") authentication : String,
+                       @Header("X-Application") applicationKey: String,
+                       @Body req : ExchangeApiRequest) : List<Event>
+
+    @Post("marketType/",
+            produces = [MediaType.APPLICATION_JSON],
+            consumes = [MediaType.APPLICATION_JSON])
+    fun marketType(@Header("X-Authentication") authentication : String,
+                   @Header("X-Application") applicationKey: String,
+                   @Body req : ExchangeApiRequest) : List<MarketType>
 
 }
