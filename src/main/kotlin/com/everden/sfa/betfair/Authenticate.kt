@@ -78,7 +78,7 @@ class AuthenticateImpl : Authenticate {
 
             val objectMapper = ObjectMapper().registerModule(KotlinModule())
             loginResponse = objectMapper.readValue<LoginResponse>(inputAsString)
-
+            Resources.store(loginResponse.sessionToken as String)
 
         } catch (ex: Exception) {
             throw IllegalStateException(ex)

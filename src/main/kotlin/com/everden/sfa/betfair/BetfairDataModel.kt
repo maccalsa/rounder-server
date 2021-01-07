@@ -1,9 +1,47 @@
 package com.everden.sfa.betfair
 
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.LocalDateTime
 
-data class MarketFilter (val eventTypeIds : List<Int>, val marketCountries : List<String>)
+
+data class ExchangeApiRequest(val filter: MarketFilter) {
+        var granularity = TimeGranularity.DAYS
+
+        constructor(filter: MarketFilter, _granularity: TimeGranularity) : this(filter) {
+                granularity = _granularity
+        }
+}
+
+@Schema(name="Filter", description="Main Search Request")
+data class MarketFilter (
+        var eventTypeIds : List<Int> = listOf(),
+        var marketCountries : List<String> = listOf(),
+        var competitionIds : List<Int> = listOf()
+)
+
+enum class TimeGranularity {DAYS, HOURS, MINUTES}
+
+data class EventType (val eventType : KeyValue, val marketCount : Int)
+data class Competition (val competition : KeyValue, val marketCount : Int)
+data class TimeRange (val timeRange : Range<String>, val marketCount : Int)
+
 data class MarketType (val marketType : String, val marketCount : Int)
+data class KeyValue(val id : Int, val name : String)
+data class Range<T>(val from : T, val to : T)
+
+@Schema(name="ApiRequest", description="Main Search Request")
+data class ApiRequest (
+        @Schema(description="the application key")
+        val appKey: String,
+        @Schema(description="the market filter criteria")
+        val filter: MarketFilter
+) {
+        var granularity = TimeGranularity.DAYS
+
+        constructor(_appKey: String, _filter: MarketFilter, _granularity: TimeGranularity) : this(_appKey, _filter) {
+                granularity = _granularity
+        }
+}
 
 @Schema(name="LoginResponse", description="The TEST Login Request")
 class LoginResponse (
