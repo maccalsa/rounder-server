@@ -46,37 +46,64 @@ class BetfairController {
     }
 
     @Post(uri="/listEventTypes", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
-    fun listEventTypes(@Body req : ApiRequest) : HttpResponse<List<EventType>> {
-        return makeApiCall(req) {a, b, c -> c.listEventTypes(SESSION_KEY, a, b)}
+    fun listEventTypes(@Body req : ApiFilterRequest) : HttpResponse<List<EventType>> {
+        return makeFilterApiCall(req) { a, b, c -> c.listEventTypes(SESSION_KEY, a, b)}
     }
 
     @Post(uri="/listCompetitions", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
-    fun listCompetitions(@Body req : ApiRequest) : HttpResponse<List<Competition>> {
-        return makeApiCall(req) {a, b, c -> c.listCompetitions(SESSION_KEY, a, b)}
+    fun listCompetitions(@Body req : ApiFilterRequest) : HttpResponse<List<Competition>> {
+        return makeFilterApiCall(req) { a, b, c -> c.listCompetitions(SESSION_KEY, a, b)}
     }
 
     @Post(uri="/listTimeRanges", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
-    fun listTimeRanges(@Body req : ApiRequest) : HttpResponse<List<TimeRange>> {
-        return makeApiCall(req) {a, b, c -> c.listTimeRanges(SESSION_KEY, a, b)}
+    fun listTimeRanges(@Body req : TimeRangeApiRequest) : HttpResponse<List<TimeRange>> {
+        return makeFilterApiCall(req) { a, b, c -> c.listTimeRanges(SESSION_KEY, a, b)}
     }
 
     @Post(uri="/listEvents", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
-    fun listEvents(@Body req : ApiRequest) : HttpResponse<List<Event>> {
-        return makeApiCall(req) {a, b, c -> c.listEvents(SESSION_KEY, a, b)}
+    fun listEvents(@Body req : ApiFilterRequest) : HttpResponse<List<Event>> {
+        return makeFilterApiCall(req) { a, b, c -> c.listEvents(SESSION_KEY, a, b)}
     }
 
-    @Post(uri="/marketType", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
-    fun marketType(@Body req : ApiRequest) : HttpResponse<List<MarketType>> {
-        return makeApiCall(req) {a, b, c -> c.marketType(SESSION_KEY, a, b)}
+    @Post(uri="/listMarketType", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
+    fun marketType(@Body req : ApiFilterRequest) : HttpResponse<List<MarketType>> {
+        return makeFilterApiCall(req) { a, b, c -> c.listMarketType(SESSION_KEY, a, b)}
     }
 
-    private fun <T: Any> makeApiCall(@Body req : ApiRequest, getData: (String, ExchangeApiRequest, BetfairClient) -> List<T>) : HttpResponse<List<T>> {
+    @Post(uri="/listCountries", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
+    fun listCountries(@Body req : ApiFilterRequest) : HttpResponse<List<Country>> {
+        return makeFilterApiCall(req) { a, b, c -> c.listCountries(SESSION_KEY, a, b)}
+    }
+
+    @Post(uri="/listVenues", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
+    fun listVenues(@Body req : ApiFilterRequest) : HttpResponse<List<Venue>> {
+        return makeFilterApiCall(req) { a, b, c -> c.listVenues(SESSION_KEY, a, b)}
+    }
+
+    @Post(uri="/listMarketCatalogue", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
+    fun listMarketCatalogue(@Body req : MarketCatalogueApiRequest) : HttpResponse<List<MarketCatalogue>> {
+        return makeFilterApiCall(req) { a, b, c -> c.listMarketCatalogue(SESSION_KEY, a, b)}
+    }
+
+
+    @Post(uri="/listMarketBook", consumes = [MediaType.APPLICATION_JSON], produces = [MediaType.APPLICATION_JSON])
+    fun listMarketBook(@Body req : ListMarketBookApiRequest) : HttpResponse<List<MarketBook>> {
         return try {
-            val apiRequest = ExchangeApiRequest(req.filter, req.granularity)
+            val results = betfairClient.listMarketBook(SESSION_KEY, req.appKey, req.request)
+            return HttpResponse.ok(results)
+        } catch (e: Exception) {
+            LOG.error("makeCall error ", e)
+            HttpResponse.badRequest()
+        }
+    }
+
+    private fun <T: Any> makeFilterApiCall(@Body req : ApiFilterRequest, getData: (String, ExchangeFilterApiRequest, BetfairClient) -> List<T>) : HttpResponse<List<T>> {
+        return try {
+            val apiRequest = ExchangeFilterApiRequest(req)
             val results = getData.invoke(req.appKey, apiRequest, betfairClient)
             return HttpResponse.ok(results)
         } catch (e: Exception) {
-            LOG.error("listTimeRanges error ", e)
+            LOG.error("makeCall error ", e)
             HttpResponse.badRequest()
         }
     }
@@ -91,34 +118,64 @@ interface BetfairClient {
             consumes = [MediaType.APPLICATION_JSON])
     fun listEventTypes(@Header("X-Authentication") authentication : String,
                        @Header("X-Application") applicationKey: String,
-                       @Body req : ExchangeApiRequest) : List<EventType>
+                       @Body req : ExchangeFilterApiRequest) : List<EventType>
 
     @Post("listCompetitions/",
             produces = [MediaType.APPLICATION_JSON],
             consumes = [MediaType.APPLICATION_JSON])
     fun listCompetitions(@Header("X-Authentication") authentication : String,
                        @Header("X-Application") applicationKey: String,
-                       @Body req : ExchangeApiRequest) : List<Competition>
+                       @Body req : ExchangeFilterApiRequest) : List<Competition>
 
     @Post("listTimeRanges/",
             produces = [MediaType.APPLICATION_JSON],
             consumes = [MediaType.APPLICATION_JSON])
     fun listTimeRanges(@Header("X-Authentication") authentication : String,
                          @Header("X-Application") applicationKey: String,
-                         @Body req : ExchangeApiRequest) : List<TimeRange>
+                         @Body req : ExchangeFilterApiRequest) : List<TimeRange>
 
     @Post("listEvents/",
             produces = [MediaType.APPLICATION_JSON],
             consumes = [MediaType.APPLICATION_JSON])
     fun listEvents(@Header("X-Authentication") authentication : String,
                        @Header("X-Application") applicationKey: String,
-                       @Body req : ExchangeApiRequest) : List<Event>
+                       @Body req : ExchangeFilterApiRequest) : List<Event>
 
-    @Post("marketType/",
+    @Post("listMarketType/",
             produces = [MediaType.APPLICATION_JSON],
             consumes = [MediaType.APPLICATION_JSON])
-    fun marketType(@Header("X-Authentication") authentication : String,
+    fun listMarketType(@Header("X-Authentication") authentication : String,
+                       @Header("X-Application") applicationKey: String,
+                       @Body req : ExchangeFilterApiRequest) : List<MarketType>
+
+    @Post("listCountries/",
+            produces = [MediaType.APPLICATION_JSON],
+            consumes = [MediaType.APPLICATION_JSON])
+    fun listCountries(@Header("X-Authentication") authentication : String,
+                      @Header("X-Application") applicationKey: String,
+                      @Body req : ExchangeFilterApiRequest) : List<Country>
+
+    @Post("listVenues/",
+            produces = [MediaType.APPLICATION_JSON],
+            consumes = [MediaType.APPLICATION_JSON])
+    fun listVenues(@Header("X-Authentication") authentication : String,
+                       @Header("X-Application") applicationKey: String,
+                       @Body req : ExchangeFilterApiRequest) : List<Venue>
+
+    @Post("listMarketCatalogue/",
+            produces = [MediaType.APPLICATION_JSON],
+            consumes = [MediaType.APPLICATION_JSON])
+    fun listMarketCatalogue(@Header("X-Authentication") authentication : String,
                    @Header("X-Application") applicationKey: String,
-                   @Body req : ExchangeApiRequest) : List<MarketType>
+                   @Body req : ExchangeFilterApiRequest) : List<MarketCatalogue>
+
+    @Post("listMarketBook/",
+            produces = [MediaType.APPLICATION_JSON],
+            consumes = [MediaType.APPLICATION_JSON])
+    fun listMarketBook(@Header("X-Authentication") authentication : String,
+                            @Header("X-Application") applicationKey: String,
+                            @Body req : ListMarketBookRequest) : List<MarketBook>
+
+
 
 }
