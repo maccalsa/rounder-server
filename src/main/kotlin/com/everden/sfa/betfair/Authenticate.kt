@@ -4,6 +4,9 @@ package com.everden.sfa.betfair
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.micronaut.context.annotation.ConfigurationInject
+import io.micronaut.context.annotation.ConfigurationProperties
+import io.micronaut.context.annotation.Value
 import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -17,16 +20,9 @@ import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 
-interface Authenticate {
-    fun authenticate(certificateLocation : String?,
-                     certificatePassword : String,
-                     username: String,
-                     password : String,
-                     appKey: String): LoginResponse?
-}
 
 @Singleton
-class AuthenticateImpl : Authenticate {
+class Authenticate {
 
     @Inject
     lateinit var objectMapper: ObjectMapper
@@ -36,12 +32,36 @@ class AuthenticateImpl : Authenticate {
             System.getenv("HOME")
     )
 
+    @Value("\${rounder-server.credentials.token:}")
+    var sessionKey : String = ""
 
-    override fun authenticate(certificateLocation : String?,
-                     certificatePassword : String,
+    @Value("\${betfair.p12certificate.password:}")
+    var certificatePassword : String = ""
+
+    @Value("\${betfair.password:}")
+    var password : String = ""
+
+    @Value("\${betfair.username:}")
+    var username : String = ""
+
+    @Value("\${betfair.appkey:}")
+    var appKey : String = ""
+
+    fun authenticate() {
+        sessionKey = authenticate(
+            certificatePassword = certificatePassword,
+            password = password,
+            appKey = appKey,
+            username = username,
+            certificateLocation = DEFAULT_LOCATION
+         )
+    }
+
+    fun authenticate(certificateLocation: String?,
+                     certificatePassword: String,
                      username: String,
-                     password : String,
-                     appKey: String): LoginResponse? {
+                     password: String,
+                     appKey: String): String {
 
         var keyStream: FileInputStream? = null
         var loginResponse : LoginResponse?
@@ -79,7 +99,7 @@ class AuthenticateImpl : Authenticate {
             val objectMapper = ObjectMapper().registerModule(KotlinModule())
             loginResponse = objectMapper.readValue<LoginResponse>(inputAsString)
             Resources.store(loginResponse.sessionToken as String)
-
+            return loginResponse?.sessionToken as String
         } catch (ex: Exception) {
             throw IllegalStateException(ex)
         } finally {
@@ -91,8 +111,9 @@ class AuthenticateImpl : Authenticate {
         }
 
 
-        return loginResponse
+        return ""
+
     }
 
-
 }
+

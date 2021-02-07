@@ -1,8 +1,8 @@
 package com.everden.sfa
 
 import com.everden.sfa.betfair.Authenticate
-import com.everden.sfa.betfair.LoginRequest
-import com.everden.sfa.betfair.LoginResponse
+import com.everden.sfa.betfair.api.LoginRequest
+import com.everden.sfa.betfair.api.LoginResponse
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.RxHttpClient
